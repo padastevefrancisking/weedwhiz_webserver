@@ -103,7 +103,7 @@ def preprocess_image(image_file):
     tensor_image = np.expand_dims(tensor_image, axis=0)
     return tensor_image
 
-@@app.route('/', methods=['POST'])
+@app.route('/', methods=['POST'])
 def process_image():
     if 'image' not in request.files:
         return jsonify({'error': 'No image file part'}), 400
