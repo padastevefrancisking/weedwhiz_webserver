@@ -6,22 +6,36 @@ from waitress import serve
 import cv2
 import os
 
-
 app = Flask(__name__)
 
 IMG_SIZE = (256, 256)
 
-# Model file settings
+# Model file settings (not required when using model_content)
+
 MODEL_FILE = 'model.tflite'
-MODEL_DIR = os.path.join(os.getcwd(), 'model')  # Use current working directory to construct the path
+MODEL_DIR = os.path.join(os.getcwd(), 'model')  # Construct path based on current working directory
 
 # Ensure model directory exists
 os.makedirs(MODEL_DIR, exist_ok=True)
 
-# Load the TFLite model
+# Construct the full model path
 model_path = os.path.join(MODEL_DIR, MODEL_FILE)
-interpreter = tf.lite.Interpreter(model_path=model_path)
-interpreter.allocate_tensors()
+print("Looking for the model at:", model_path)
+
+# Check if the file exists
+if not os.path.exists(model_path):
+    raise FileNotFoundError(f"The model file '{MODEL_FILE}' was not found at {MODEL_DIR}.")
+
+# Function to load model content from a file
+def load_model_from_content():
+    with open(model_path, 'rb') as f:
+        model_content = f.read()  # Read the model binary content
+    interpreter = tf.lite.Interpreter(model_content=model_content)  # Load model from content
+    interpreter.allocate_tensors()
+    return interpreter
+
+# Load the model
+interpreter = load_model_from_content()
 
 # Get input and output details to understand the shape of inputs and outputs
 input_details = interpreter.get_input_details()
