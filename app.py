@@ -13,7 +13,8 @@ IMG_SIZE = (256, 256)
 # Model file settings (not required when using model_content)
 
 MODEL_FILE = 'model.tflite'
-MODEL_DIR = os.path.join(os.getcwd(), 'model')  # Construct path based on current working directory
+MODEL_DIR = os.getcwd() # Construct path based on current working directory
+print(MODEL_DIR)
 
 # Ensure model directory exists
 os.makedirs(MODEL_DIR, exist_ok=True)
