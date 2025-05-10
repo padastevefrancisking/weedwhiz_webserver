@@ -103,7 +103,7 @@ def preprocess_image(image_file):
     tensor_image = np.expand_dims(tensor_image, axis=0)
     return tensor_image
 
-@app.route('/', methods=['POST'])
+@@app.route('/', methods=['POST'])
 def process_image():
     if 'image' not in request.files:
         return jsonify({'error': 'No image file part'}), 400
@@ -111,25 +111,33 @@ def process_image():
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
 
-    # Preprocess the image
-    tensor_image = preprocess_image(file)
+    # Preprocess image
+    tensor_image = preprocess_image(file)  # Shape: (1, 256, 256, 3), float32 [0-1]
 
-    # Set the input tensor for the TFLite interpreter
-    interpreter.set_tensor(input_details[0]['index'], tensor_image)
+    # Quantize input
+    input_scale, input_zero_point = input_details[0]['quantization']
+    quantized_input = (tensor_image / input_scale + input_zero_point).astype(np.int8)
+
+    # Set the input tensor
+    interpreter.set_tensor(input_details[0]['index'], quantized_input)
 
     # Run inference
     interpreter.invoke()
 
-    # Get the output tensor
+    # Get the output tensor (int8)
     output_data = interpreter.get_tensor(output_details[0]['index'])
 
-    # Process the output (e.g., prediction)
-    predicted_class_index = np.argmax(output_data[0])
-    confidence_score = output_data[0][predicted_class_index]
+    # Dequantize output
+    output_scale, output_zero_point = output_details[0]['quantization']
+    dequantized_output = (output_data.astype(np.float32) - output_zero_point) * output_scale
+
+    # Get prediction
+    predicted_class_index = int(np.argmax(dequantized_output[0]))
+    confidence_score = float(dequantized_output[0][predicted_class_index])
 
     return jsonify({
-        'predicted_class_index': int(predicted_class_index),
-        'confidence_score': float(confidence_score)
+        'predicted_class_index': predicted_class_index,
+        'confidence_score': confidence_score
     })
 
 if __name__ == "__main__":
