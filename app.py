@@ -5,15 +5,18 @@ from PIL import Image
 from waitress import serve
 import cv2
 import os
+from flask_cors import CORS
+
 
 app = Flask(__name__)
+CORS(app)
 
 IMG_SIZE = (256, 256)
 
 # Model file settings (not required when using model_content)
 
 MODEL_FILE = 'model.tflite'
-MODEL_DIR = os.getcwd() # Construct path based on current working directory
+MODEL_DIR = os.path.dirname(__file__) # Construct path based on current working directory
 print(MODEL_DIR)
 
 # Ensure model directory exists
@@ -126,6 +129,8 @@ def process_image():
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
 
+    print("File received. Processing...")
+
     # Preprocess image
     tensor_image = preprocess_image(file)  # Shape: (1, 256, 256, 3), float32 [0-1]
 
@@ -149,6 +154,8 @@ def process_image():
     # Get prediction
     predicted_class_index = int(np.argmax(dequantized_output[0]))
     confidence_score = float(dequantized_output[0][predicted_class_index])
+
+    print('file returning')
 
     return jsonify({
         'predicted_class_index': predicted_class_index,
